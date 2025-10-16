@@ -205,7 +205,7 @@ def get_screen_resolution():
 
 def resize_image(image, target_width, target_height):
     """
-    Resize image to fill screen while maintaining aspect ratio.
+    Resize image to fit screen by adding black bars if needed.
 
     Args:
         image (PIL.Image): Image to resize
@@ -213,21 +213,35 @@ def resize_image(image, target_width, target_height):
         target_height (int): Target height in pixels
 
     Returns:
-        PIL.Image: Resized image
+        PIL.Image: Resized image that fits the screen with black bars if needed
     """
+    # Calculate ratios
     original_ratio = image.width / image.height
     target_ratio = target_width / target_height
 
     if target_ratio > original_ratio:
-        # Screen is wider than image
+        # Screen is wider than image - fit to height
         new_height = target_height
-        new_width = int(original_ratio * new_height)
+        new_width = int(target_height * original_ratio)
     else:
-        # Screen is taller than image
+        # Screen is taller than image - fit to width
         new_width = target_width
-        new_height = int(new_width / original_ratio)
+        new_height = int(target_width / original_ratio)
 
-    return image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    # Resize image while maintaining aspect ratio
+    resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+    # Create black background of target size
+    final_image = Image.new('RGB', (target_width, target_height), (0, 0, 0))
+
+    # Calculate position to center the image
+    x = (target_width - new_width) // 2
+    y = (target_height - new_height) // 2
+
+    # Paste resized image onto black background
+    final_image.paste(resized_image, (x, y))
+
+    return final_image
 
 def download_image(url, title):
     """
