@@ -90,6 +90,7 @@ The script can be configured through the `settings.json` file:
 - The script maintains a history of the last 100 shown memes to avoid repetition
 - If a meme cannot be fetched, it will use a fallback image
 - Images are temporarily stored in your system's temp directory
+- For now tested on Windows only
 ![Fallback Balrog](./fallback_balrog.jpg)
 
 ## Requirements
