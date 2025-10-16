@@ -10,7 +10,26 @@ import requests
 from PIL import Image, ImageDraw, ImageFont
 
 HISTORY_FILE = os.path.join(os.path.dirname(__file__), "meme_history.json")
-MAX_HISTORY = 100
+SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "settings.json")
+
+DEFAULT_SETTINGS = {
+    "font": {
+        "name": "arial.ttf",
+        "size": 40
+    },
+    "bottom_strip_height": 50,
+    "max_history": 100,
+    "subreddits": [
+        None,
+        "programmingmemes",
+        "ProgrammerHumor",
+        "lotrmemes",
+        "MEOW_IRL",
+        "YouSeeComrade",
+        "DunderMifflin",
+        "workmemes"
+    ]
+}
 
 def load_history():
     if os.path.exists(HISTORY_FILE):
@@ -49,11 +68,35 @@ def get_random_meme(subreddits: list):
                 return meme_title, meme_url
     return None
 
+def get_setting(key, default=None):
+    """Get setting value with dot notation support and default fallback"""
+    try:
+        value = SETTINGS
+        for k in key.split('.'):
+            value = value[k]
+        return value
+    except (KeyError, TypeError):
+        return default if default is not None else DEFAULT_SETTINGS.get(key)
+
+def load_settings():
+    """Load user settings from JSON file"""
+    try:
+        with open(SETTINGS_FILE, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return DEFAULT_SETTINGS
+
+SETTINGS = load_settings()
+MAX_HISTORY = get_setting('max_history')
+
 def add_title_to_image(image, title):
     """Add title text above the image and black strip below"""
-    # Try to use Arial font, fallback to default if not available
+    # Try to use configured font, fallback to default if not available
     try:
-        font = ImageFont.truetype("arial.ttf", 40)
+        font = ImageFont.truetype(
+            get_setting('font.name'),
+            get_setting('font.size')
+        )
     except:
         font = ImageFont.load_default()
 
@@ -67,8 +110,8 @@ def add_title_to_image(image, title):
     text_bbox = dummy_draw.textbbox((0, 0), wrapped_text, font=font)
     text_height = text_bbox[3] - text_bbox[1] + 2 * margin
 
-    # Add bottom strip height (50 pixels)
-    bottom_strip_height = 50
+    # Add bottom strip height from settings
+    bottom_strip_height = get_setting('bottom_strip_height')
 
     # Create new image with space for title and bottom strip
     new_img = Image.new('RGB',
@@ -190,15 +233,7 @@ def set_wallpaper(image_path):
         return False
 
 if __name__ == "__main__":
-    subreddits = [None,
-                  "programmingmemes",
-                  "ProgrammerHumor",
-                  "lotrmemes",
-                  "MEOW_IRL",
-                  "YouSeeComrade",
-                  "DunderMifflin",
-                  "workmemes"]
-    meme_title, meme_url = get_random_meme(subreddits)
+    meme_title, meme_url = get_random_meme(get_setting('subreddits'))
     if meme_url:
         img_path = download_image(meme_url, meme_title)
     else:
