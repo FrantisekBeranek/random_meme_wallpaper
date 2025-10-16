@@ -323,7 +323,12 @@ if __name__ == "__main__":
     if meme_url:
         img_path = download_image(meme_url, meme_title)
     else:
-        img_path = os.path.join(os.path.dirname(__file__), "fallback_balrog.jpg")
+        balrog_path = os.path.join(os.path.dirname(__file__), "fallback_balrog.jpg")
+        image = Image.open(balrog_path)
+        screen_width, screen_height = get_screen_resolution()
+        image = resize_image(image, screen_width, screen_height)
+        img_path = os.path.join(tempfile.gettempdir(), "random_meme_wallpaper.jpg")
+        image.save(img_path, "JPEG", quality=95)
     if img_path and set_wallpaper(img_path):
         print(f"Wallpaper updated! ({img_path})")
     else:
