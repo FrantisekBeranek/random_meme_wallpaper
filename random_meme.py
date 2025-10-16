@@ -95,7 +95,7 @@ def get_random_meme(subreddits: list):
                     history = history[-MAX_HISTORY:]
                 save_history(history)
                 return meme_title, meme_url
-    return None
+    return None, None
 
 def get_setting(key, default=None):
     """
