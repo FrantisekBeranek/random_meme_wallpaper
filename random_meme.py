@@ -249,10 +249,6 @@ def download_image(url, title):
         if image.mode != 'RGB':
             image = image.convert('RGB')
 
-        # Get screen resolution and resize image
-        screen_width, screen_height = get_screen_resolution()
-        image = resize_image(image, screen_width, screen_height)
-
         # Add title to image
         image = add_title_to_image(image, title)
 
@@ -274,6 +270,13 @@ def set_wallpaper(image_path):
     Returns:
         bool: True if successful, False otherwise
     """
+    # Adjust image to screen size
+    image = Image.open(image_path)
+    screen_width, screen_height = get_screen_resolution()
+    image = resize_image(image, screen_width, screen_height)
+    image_path = os.path.join(tempfile.gettempdir(), "random_meme_wallpaper.jpg")
+    image.save(image_path, "JPEG", quality=95)
+
     system = platform.system()
 
     try:
@@ -325,12 +328,7 @@ if __name__ == "__main__":
     if meme_url:
         img_path = download_image(meme_url, meme_title)
     else:
-        balrog_path = os.path.join(os.path.dirname(__file__), "fallback_balrog.jpg")
-        image = Image.open(balrog_path)
-        screen_width, screen_height = get_screen_resolution()
-        image = resize_image(image, screen_width, screen_height)
-        img_path = os.path.join(tempfile.gettempdir(), "random_meme_wallpaper.jpg")
-        image.save(img_path, "JPEG", quality=95)
+        img_path = os.path.join(os.path.dirname(__file__), "fallback_balrog.jpg")
     if img_path and set_wallpaper(img_path):
         print(f"Wallpaper updated! ({img_path})")
     else:
