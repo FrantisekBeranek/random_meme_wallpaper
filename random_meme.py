@@ -1,3 +1,13 @@
+"""
+Random Meme Wallpaper Setter
+
+This module downloads random meme from Reddit using the Meme API and sets it as desktop wallpaper.
+Supports multiple platforms (Windows, macOS, Linux) and maintains a history of shown memes to avoid
+repetition. The script can be configured through settings.json file.
+
+The module uses the Meme API (https://github.com/D3vd/Meme_Api) to fetch memes.
+"""
+
 import os
 import random
 import tempfile
@@ -32,18 +42,36 @@ DEFAULT_SETTINGS = {
 }
 
 def load_history():
+    """
+    Load history of previously shown memes from a JSON file.
+
+    Returns:
+        list: List of meme URLs that have been previously shown
+    """
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, 'r') as f:
             return json.load(f)['shown_memes']
     return []
 
 def save_history(history):
+    """
+    Save the history of shown memes to a JSON file.
+
+    Args:
+        history (list): List of meme URLs to save
+    """
     with open(HISTORY_FILE, 'w') as f:
         json.dump({'shown_memes': history}, f)
 
 def get_random_meme(subreddits: list):
     """
-    Fetches a random meme from the Meme API (no authentication needed)
+    Fetch a random meme from specified subreddits using the Meme API.
+
+    Args:
+        subreddits (list): List of subreddit names to fetch from (None means random)
+
+    Returns:
+        tuple: (meme_title, meme_url) if successful, None if failed
     """
     history = load_history()
     max_attempts = 25
@@ -69,7 +97,16 @@ def get_random_meme(subreddits: list):
     return None
 
 def get_setting(key, default=None):
-    """Get setting value with dot notation support and default fallback"""
+    """
+    Get setting value using dot notation with fallback to default.
+
+    Args:
+        key (str): Setting key using dot notation (e.g., 'font.size')
+        default: Value to return if key not found (defaults to None)
+
+    Returns:
+        The setting value or default/DEFAULT_SETTINGS value if not found
+    """
     try:
         value = SETTINGS
         for k in key.split('.'):
@@ -79,7 +116,12 @@ def get_setting(key, default=None):
         return default if default is not None else DEFAULT_SETTINGS.get(key)
 
 def load_settings():
-    """Load user settings from JSON file"""
+    """
+    Load user settings from JSON file with fallback to defaults.
+
+    Returns:
+        dict: Dictionary containing user settings or default settings
+    """
     try:
         with open(SETTINGS_FILE, 'r') as f:
             return json.load(f)
@@ -90,7 +132,16 @@ SETTINGS = load_settings()
 MAX_HISTORY = get_setting('max_history')
 
 def add_title_to_image(image, title):
-    """Add title text above the image and black strip below"""
+    """
+    Add title text above the image and black strip below.
+
+    Args:
+        image (PIL.Image): Source image
+        title (str): Text to add above the image
+
+    Returns:
+        PIL.Image: New image with added title and bottom strip
+    """
     # Try to use configured font, fallback to default if not available
     try:
         font = ImageFont.truetype(
@@ -128,7 +179,12 @@ def add_title_to_image(image, title):
     return new_img
 
 def get_screen_resolution():
-    """Get the primary screen resolution in an OS-independent way"""
+    """
+    Get primary screen resolution in an OS-independent way.
+
+    Returns:
+        tuple: (width, height) of the primary screen, defaults to (1920, 1080)
+    """
     try:
         if platform.system() == 'Windows':
             import ctypes
@@ -146,7 +202,17 @@ def get_screen_resolution():
         return 1920, 1080  # fallback resolution
 
 def resize_image(image, target_width, target_height):
-    """Resize image to fill screen while maintaining aspect ratio"""
+    """
+    Resize image to fill screen while maintaining aspect ratio.
+
+    Args:
+        image (PIL.Image): Image to resize
+        target_width (int): Target width in pixels
+        target_height (int): Target height in pixels
+
+    Returns:
+        PIL.Image: Resized image
+    """
     original_ratio = image.width / image.height
     target_ratio = target_width / target_height
 
@@ -162,6 +228,16 @@ def resize_image(image, target_width, target_height):
     return image.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
 def download_image(url, title):
+    """
+    Download image from URL and prepare it as wallpaper.
+
+    Args:
+        url (str): URL of the image to download
+        title (str): Title text to add to the image
+
+    Returns:
+        str: Path to the saved wallpaper image or None if failed
+    """
     response = requests.get(url)
     if response.status_code == 200:
         # Open image from bytes
@@ -185,7 +261,17 @@ def download_image(url, title):
     return None
 
 def set_wallpaper(image_path):
-    """Set wallpaper in an OS-independent way"""
+    """
+    Set wallpaper in an OS-independent way.
+
+    Supports Windows, macOS, and Linux (GNOME, KDE, XFCE).
+
+    Args:
+        image_path (str): Path to the image file to use as wallpaper
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
     system = platform.system()
 
     try:
