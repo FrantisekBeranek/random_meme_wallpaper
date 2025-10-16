@@ -16,6 +16,7 @@ import textwrap
 import platform
 from io import BytesIO
 import subprocess
+import certifi
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
@@ -83,7 +84,7 @@ def get_random_meme(subreddits: list):
         url = "https://meme-api.com/gimme"
         if subreddit:
             url += f"/{subreddit}"
-        response = requests.get(url)
+        response = requests.get(url, verify=certifi.where())
         if response.status_code == 200:
             data = response.json()
             meme_url = data.get("url")
@@ -191,9 +192,10 @@ def get_screen_resolution():
             user32 = ctypes.windll.user32
             return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
         elif platform.system() == 'Linux':
-            output = subprocess.check_output(['xrandr']).decode()
-            current = [l for l in output.splitlines() if ' connected' in l][0]
-            return map(int, current.split()[2].split('x'))
+            output = subprocess.Popen(r'xrandr | grep "\*" | cut -d" " -f4',
+                                      shell=True, stdout=subprocess.PIPE).communicate()[0]
+            resolution = output.split()[0].split(b'x')
+            return int(resolution[0]), int(resolution[1])
         elif platform.system() == 'Darwin':  # macOS
             output = subprocess.check_output(['system_profiler', 'SPDisplaysDataType'])
             res = [l for l in output.decode().split('\n') if 'Resolution' in l][0]
@@ -238,7 +240,7 @@ def download_image(url, title):
     Returns:
         str: Path to the saved wallpaper image or None if failed
     """
-    response = requests.get(url)
+    response = requests.get(url, verify=certifi.where())
     if response.status_code == 200:
         # Open image from bytes
         image = Image.open(BytesIO(response.content))
